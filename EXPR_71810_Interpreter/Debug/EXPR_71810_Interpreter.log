@@ -1,0 +1,4 @@
+﻿  Interpreter.cpp
+d:\projects\interpreter\expr_71810_interpreter\interpreter.cpp(49): warning C4018: '>': signed/unsigned mismatch
+d:\projects\interpreter\expr_71810_interpreter\interpreter.cpp(70): warning C4715: 'Interpreter::GetNextToken': not all control paths return a value
+  EXPR_71810_Interpreter.vcxproj -> D:\Projects\Interpreter\Debug\EXPR_71810_Interpreter.exe
