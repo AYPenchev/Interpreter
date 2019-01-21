@@ -4,7 +4,6 @@
 Token::Token()
 {
 	this->type = "";
-	//this->value = "";
 }
 
 Token::Token(std::string otherType, int otherValue)

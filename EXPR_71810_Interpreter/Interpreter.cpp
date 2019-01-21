@@ -6,21 +6,24 @@ Interpreter::Interpreter()
 	this->text = "";
 	this->position = 0;
 	this->currentToken = Token();
+	this->currentChar = this->text[this->position];
 }
 
 Interpreter::Interpreter(std::string text)
 {
 	this->text = text;
+	this->position = 0;
+	this->currentToken = Token();
+	this->currentChar = this->text[this->position];
 }
 
-/*std::string Interpreter::Error() const throw()
+void Interpreter::Error()
 {
-	return "Error parsing input";
-}*/
+	throw std::exception("error");
+}
 
 int Interpreter::ConverCharToInt(char charToInt)
 {
-	//std::string convertedChar = convertedChar.append(1, charToString);
 	switch (charToInt)
 	{
 	case '0': return 0; break;
@@ -35,49 +38,56 @@ int Interpreter::ConverCharToInt(char charToInt)
 	case '9': return 9; break;
 	case '+': return -1; break;
 
-	default: std::cout << "Error vuv convertchartoint" << std::endl;
-		return -1;//Error();
+	default: Error();
+		return -1;
 		break;
 	}
-//	return;
 }
 
 Token Interpreter::GetNextToken()
 {
-	//this->text = "";
-
-	if (this->position > text.length() - 1)
+	while (this->currentChar != '\0')
 	{
-		return Token("EOF");
-	}
-	
-	char currentChar = this->text[this->position];
+		if (this->currentChar == ' ')
+		{
+			this->skipAnyWhitespace();
+			continue;
+		}
+		
+		if (this->currentChar >= '0' && this->currentChar <= '9')
+		{
+			Token token = Token(GetINTEGER(), this->readMultiDigitNumber());
+			return token;
+		}
 
-	if (currentChar >= '0' && currentChar <= '9')
-	{
-		Token token = Token("INTEGER", ConverCharToInt(currentChar));
-		this->position++;
-		return token;
-	}
+		if (this->currentChar == '+')
+		{
+			this->advance();
+			Token token = Token(GetPLUS(), this->currentChar);
+			return token;
+		}
 
-	if (currentChar == '+')
-	{
-		Token token = Token("PLUS", ConverCharToInt(currentChar));
-		this->position++;
-		return token;
+		if (this->currentChar == '-')
+		{
+			this->advance();
+			Token token = Token(GetMINUS(), this->currentChar);
+			return token;
+		}
+
+		Error();
 	}
-	std::cout << "Error vuv getnextoken" << std::endl; //Error();
+	return Token(GetENDOF());
 }
 
 void Interpreter::Eat(std::string tokenType)
 {
-	if (currentToken.GetType() == tokenType)
+	if (this->currentToken.GetType() == tokenType)
 	{
-		currentToken = GetNextToken();
+		this->currentToken = GetNextToken();
 	}
 	else
 	{
-		std::cout << "Error vuv eat" << std::endl; //Error();
+		Error();
 	}
 }
 
@@ -86,16 +96,75 @@ int Interpreter::Expr()
 	this->currentToken = GetNextToken();
 
 	Token leftNum = this->currentToken;
-	this->Eat("INTEGER");
+	this->Eat(GetINTEGER());
 
-	Token operatorPlus = this->currentToken;
-	this->Eat("PLUS");
+	Token oper = this->currentToken;
+	if (oper.GetType() == GetPLUS())
+	{
+		this->Eat(GetPLUS());
+	}
+	else
+	{
+		this->Eat(GetMINUS());
+	}
 
 	Token rightNum = this->currentToken;
-	this->Eat("INTEGER");
+	this->Eat(GetINTEGER());
 
-	int result = leftNum.GetValue() + rightNum.GetValue();
+	int result;
+	if (oper.GetType() == GetPLUS())
+	{
+		result = leftNum.GetValue() + rightNum.GetValue();
+	}
+	else
+	{
+		result = leftNum.GetValue() - rightNum.GetValue();
+	}
+
 	return result;
+}
+
+void Interpreter::advance()
+{
+	this->position += 1;
+	
+	if (this->position > this->text.length() - 1)
+	{
+		this->currentChar = '\0';
+	}
+	else
+	{
+		this->currentChar = this->text[this->position];
+	}
+}
+
+void Interpreter::skipAnyWhitespace()
+{
+	while (this->currentChar != '\0' && this->currentChar == ' ')
+	{
+		this->advance();
+	}
+}
+
+int Interpreter::readMultiDigitNumber()
+{
+	std::string result = "";
+	while (this->currentChar != '\0' && this->currentChar >= '0' && this->currentChar <= '9')
+	{
+		result += this->currentChar;
+		this->advance();
+	}
+	return converStringToInt(result);
+}
+
+int Interpreter::converStringToInt(std::string stringToBeConverted)
+{
+	int convertedString = 0; 
+	for (int i = stringToBeConverted.length() - 1, j = 1; i >= 0 ; i--, j *= 10)
+	{
+		convertedString += ((int)stringToBeConverted[i] - '0') * j;
+	}
+	return convertedString;
 }
 
 void Interpreter::SetText(std::string text)
@@ -128,3 +197,32 @@ Token Interpreter::GetCurrentToken() const
 	return this->currentToken;
 }
 
+void Interpreter::SetCurrentChar(char currentChar)
+{
+	this->currentChar = currentChar;
+}
+
+char Interpreter::GetCurrentChar() const
+{
+	return this->currentChar;
+}
+
+std::string Interpreter::GetINTEGER() const
+{
+	return this->INTEGER;
+}
+
+std::string Interpreter::GetPLUS() const
+{
+	return this->PLUS;
+}
+
+std::string Interpreter::GetENDOF() const
+{
+	return this->ENDOF;
+}
+
+std::string Interpreter::GetMINUS() const
+{
+	return this->MINUS;
+}

@@ -7,26 +7,22 @@
 int main()
 {
 	std::string text;
-	while (true)
-	{
-		//try
-		//{
-			std::cout << "calc> ";
-			std::cin >> text;
-			if (text == "End" || text == "end")
-			{
-				break;
-			}
-			//throw myException;
-		//}
-		//catch (std::exception& e)
-		//{
-		//	std::cout << e.what() << std::endl;
-			//break;
-		//}
-		Interpreter interpreter = Interpreter(text);
-		int result = interpreter.Expr();
-		std::cout << result << std::endl; 
+	bool endFlag = true;
 
+	while (endFlag)
+	{
+		std::cout << "calc> ";
+		std::getline(std::cin, text);
+
+		if (text == "End" || text == "end")
+		{
+			endFlag = false;
+		}
+		else
+		{
+			Interpreter interpreter = Interpreter(text);
+			int result = interpreter.Expr();
+			std::cout << result << std::endl;
+		}
 	}
 }
