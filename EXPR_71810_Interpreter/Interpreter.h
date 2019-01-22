@@ -2,47 +2,26 @@
 #include <iostream>
 #include <string>
 #include "Token.h"
+#include "Lexer.h"
 
 class Interpreter 
 {
 public:
 	Interpreter();
-	Interpreter(std::string text);
-	
+	Interpreter(Lexer lexer);
+
 	void Error();
-	Token GetNextToken();
 	void Eat(std::string tokenType);
+	int Factor();
 	int Expr();
-	void advance();
-	void skipAnyWhitespace();
-	int readMultiDigitNumber();
-	int converStringToInt(std::string stringToBeConverted);
-
-	void SetText(std::string text);
-	std::string GetText() const;
-
-	void SetPosition(int position);
-	int GetPosition() const;
+	int term();
 
 	void SetCurrentToken(Token currentToken);
 	Token GetCurrentToken() const;
 
-	void SetCurrentChar(char currentChar);
-	char GetCurrentChar() const;
-
-	std::string GetINTEGER() const;
-	std::string GetPLUS() const;
-	std::string GetENDOF() const;
-	std::string GetMINUS() const;
+	void SetLexer(Lexer lexer);
+	Lexer GetLexer() const;
 private:
-	int ConverCharToInt(char charToInt);
-	std::string text;
-	int position = 0;
+	Lexer lexer;
 	Token currentToken;
-	char currentChar;
-
-	const std::string INTEGER = "INTEGER",
-					  PLUS = "PLUS",
-					  ENDOF = "EOF",
-					  MINUS = "MINUS";
 };

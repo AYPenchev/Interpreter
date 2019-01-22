@@ -20,7 +20,8 @@ int main()
 		}
 		else
 		{
-			Interpreter interpreter = Interpreter(text);
+			Lexer lexer = Lexer(text);
+			Interpreter interpreter = Interpreter(lexer);
 			int result = interpreter.Expr();
 			std::cout << result << std::endl;
 		}

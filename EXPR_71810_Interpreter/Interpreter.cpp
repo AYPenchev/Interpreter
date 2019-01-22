@@ -3,18 +3,14 @@
 
 Interpreter::Interpreter()
 {
-	this->text = "";
-	this->position = 0;
+	this->lexer = Lexer();
 	this->currentToken = Token();
-	this->currentChar = this->text[this->position];
 }
 
-Interpreter::Interpreter(std::string text)
+Interpreter::Interpreter(Lexer lexer)
 {
-	this->text = text;
-	this->position = 0;
+	this->lexer = lexer;
 	this->currentToken = Token();
-	this->currentChar = this->text[this->position];
 }
 
 void Interpreter::Error()
@@ -22,68 +18,11 @@ void Interpreter::Error()
 	throw std::exception("error");
 }
 
-int Interpreter::ConverCharToInt(char charToInt)
-{
-	switch (charToInt)
-	{
-	case '0': return 0; break;
-	case '1': return 1; break;
-	case '2': return 2; break;
-	case '3': return 3; break;
-	case '4': return 4; break;
-	case '5': return 5; break; 
-	case '6': return 6; break;
-	case '7': return 7; break;
-	case '8': return 8; break;
-	case '9': return 9; break;
-	case '+': return -1; break;
-
-	default: Error();
-		return -1;
-		break;
-	}
-}
-
-Token Interpreter::GetNextToken()
-{
-	while (this->currentChar != '\0')
-	{
-		if (this->currentChar == ' ')
-		{
-			this->skipAnyWhitespace();
-			continue;
-		}
-		
-		if (this->currentChar >= '0' && this->currentChar <= '9')
-		{
-			Token token = Token(GetINTEGER(), this->readMultiDigitNumber());
-			return token;
-		}
-
-		if (this->currentChar == '+')
-		{
-			this->advance();
-			Token token = Token(GetPLUS(), this->currentChar);
-			return token;
-		}
-
-		if (this->currentChar == '-')
-		{
-			this->advance();
-			Token token = Token(GetMINUS(), this->currentChar);
-			return token;
-		}
-
-		Error();
-	}
-	return Token(GetENDOF());
-}
-
 void Interpreter::Eat(std::string tokenType)
 {
 	if (this->currentToken.GetType() == tokenType)
 	{
-		this->currentToken = GetNextToken();
+		this->currentToken = this->lexer.GetNextToken();
 	}
 	else
 	{
@@ -91,100 +30,69 @@ void Interpreter::Eat(std::string tokenType)
 	}
 }
 
+int Interpreter::Factor()
+{
+	Token token = this->currentToken;
+	this->Eat(this->lexer.GetINTEGER());
+	return token.GetValue();
+}
+
 int Interpreter::Expr()
 {
-	this->currentToken = GetNextToken();
+	this->currentToken = this->lexer.GetNextToken();
 
-	Token leftNum = this->currentToken;
-	this->Eat(GetINTEGER());
+	int result = this->term();
 
-	Token oper = this->currentToken;
-	if (oper.GetType() == GetPLUS())
+	while (this->currentToken.GetType() == this->lexer.GetPLUS() ||
+		   this->currentToken.GetType() == this->lexer.GetMINUS())
 	{
-		this->Eat(GetPLUS());
-	}
-	else
-	{
-		this->Eat(GetMINUS());
-	}
-
-	Token rightNum = this->currentToken;
-	this->Eat(GetINTEGER());
-
-	int result;
-	if (oper.GetType() == GetPLUS())
-	{
-		result = leftNum.GetValue() + rightNum.GetValue();
-	}
-	else
-	{
-		result = leftNum.GetValue() - rightNum.GetValue();
+		Token token = this->currentToken;
+		if (token.GetType() == this->lexer.GetPLUS())
+		{
+			this->Eat(this->lexer.GetPLUS());
+			result = result + this->term();
+		}
+		else if (token.GetType() == this->lexer.GetMINUS())
+		{
+			this->Eat(this->lexer.GetMINUS());
+			result = result - this->term();
+		}
 	}
 
 	return result;
 }
 
-void Interpreter::advance()
+int Interpreter::term()
 {
-	this->position += 1;
-	
-	if (this->position > this->text.length() - 1)
+	int result = this->Factor();
+
+	while (this->currentToken.GetType() == this->lexer.GetPRODUCT() ||
+		   this->currentToken.GetType() == this->lexer.GetDIVISION() ||
+		   this->currentToken.GetType() == this->lexer.GetREMAINDER())
 	{
-		this->currentChar = '\0';
+		Token token = this->currentToken;
+		
+		if (token.GetType() == lexer.GetPRODUCT())
+		{
+			this->Eat(lexer.GetPRODUCT());
+			result = result * this->Factor();
+		}
+		else if (token.GetType() == lexer.GetDIVISION())
+		{
+			this->Eat(lexer.GetDIVISION());
+			result = result / this->Factor();
+		}
+		else if (token.GetType() == this->lexer.GetREMAINDER())
+		{
+			this->Eat(this->lexer.GetREMAINDER());
+			result = result % this->Factor();
+		}
 	}
-	else
-	{
-		this->currentChar = this->text[this->position];
-	}
-}
+	return result;
 
-void Interpreter::skipAnyWhitespace()
-{
-	while (this->currentChar != '\0' && this->currentChar == ' ')
-	{
-		this->advance();
-	}
-}
-
-int Interpreter::readMultiDigitNumber()
-{
-	std::string result = "";
-	while (this->currentChar != '\0' && this->currentChar >= '0' && this->currentChar <= '9')
-	{
-		result += this->currentChar;
-		this->advance();
-	}
-	return converStringToInt(result);
-}
-
-int Interpreter::converStringToInt(std::string stringToBeConverted)
-{
-	int convertedString = 0; 
-	for (int i = stringToBeConverted.length() - 1, j = 1; i >= 0 ; i--, j *= 10)
-	{
-		convertedString += ((int)stringToBeConverted[i] - '0') * j;
-	}
-	return convertedString;
-}
-
-void Interpreter::SetText(std::string text)
-{
-	this->text = text;
-}
-
-std::string Interpreter::GetText() const
-{
-	return this->text;
-}
-
-void Interpreter::SetPosition(int position)
-{
-	this->position = position;
-}
-
-int Interpreter::GetPosition() const
-{
-	return this->position;
+	/*Token token = this->currentToken;
+	this->Eat(GetINTEGER());
+	return token.GetValue();*/
 }
 
 void Interpreter::SetCurrentToken(Token currentToken)
@@ -197,32 +105,12 @@ Token Interpreter::GetCurrentToken() const
 	return this->currentToken;
 }
 
-void Interpreter::SetCurrentChar(char currentChar)
+void Interpreter::SetLexer(Lexer lexer)
 {
-	this->currentChar = currentChar;
+	this->lexer = lexer;
 }
 
-char Interpreter::GetCurrentChar() const
+Lexer Interpreter::GetLexer() const
 {
-	return this->currentChar;
-}
-
-std::string Interpreter::GetINTEGER() const
-{
-	return this->INTEGER;
-}
-
-std::string Interpreter::GetPLUS() const
-{
-	return this->PLUS;
-}
-
-std::string Interpreter::GetENDOF() const
-{
-	return this->ENDOF;
-}
-
-std::string Interpreter::GetMINUS() const
-{
-	return this->MINUS;
+	return this->lexer;
 }
